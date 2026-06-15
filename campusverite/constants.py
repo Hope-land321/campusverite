@@ -2,13 +2,17 @@ from __future__ import annotations
 
 
 CATEGORIES = [
-    ("pedagogie", "Pedagogie"),
-    ("infrastructure", "Infrastructure"),
+    ("cours_profs", "Cours & Profs"),
+    ("cafeteria", "Cafétéria"),
+    ("logement", "Logement"),
+    ("securite", "Sécurité"),
+    ("equipements", "Équipements"),
     ("administration", "Administration"),
-    ("equipements", "Equipements"),
+    ("evenements", "Événements"),
 ]
 
 PUBLICATION_TYPES = {
     "rant": "Coup de Gueule",
     "suggestion": "Suggestion",
 }
+

@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     response = client.post(
         "/posts",
         data={
-            "category": "infrastructure",
+            "category": "equipements",
             "type": "rant",
             "content": "Les salles manquent de prises fonctionnelles pour travailler correctement avec les ordinateurs.",
             "charter": "on",
