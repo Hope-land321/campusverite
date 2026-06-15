@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion Administration — CampusVérité{% endblock %}
+
+{% block content %}
+  <section class="form-shell">
+    <div class="page-heading reveal" style="text-align: center; max-width: 480px; margin: 0 auto 32px;">
+      <p class="form-eyebrow"><i class="lucide-lock"></i> ZONE SÉCURISÉE</p>
+      <h1>Backoffice Modération</h1>
+      <p class="form-description">Connectez-vous pour modérer les signaux et administrer l'observatoire.</p>
+    </div>
+
+    <!-- Login Box -->
+    <div style="max-width: 460px; margin: 0 auto;" class="reveal">
+      <form class="feedback-form glass-panel" action="{{ url_for('main.admin_login') }}" method="post">
+        {% if error %}
+          <div class="error-box" role="alert">
+            <div class="error-header">
+              <i class="lucide-alert-circle"></i>
+              <strong>Erreur d'accès</strong>
+            </div>
+            <p>{{ error }}</p>
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="username">Identifiant</label>
+          <div class="select-wrapper" style="position: relative;">
+            <i class="lucide-user select-icon" style="position: absolute; left: 12px; top: 14px; color: var(--text-muted);"></i>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              required 
+              placeholder="admin"
+              style="width: 100%; height: 44px; padding: 0 12px 0 40px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-glass-active); color: var(--text-primary);"
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <div class="select-wrapper" style="position: relative;">
+            <i class="lucide-key select-icon" style="position: absolute; left: 12px; top: 14px; color: var(--text-muted);"></i>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              required
+              placeholder="••••••••"
+              style="width: 100%; height: 44px; padding: 0 12px 0 40px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: var(--bg-glass-active); color: var(--text-primary);"
+            >
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: 16px;">
+          <button type="submit" class="submit-btn" style="width: 100%;">
+            <i class="lucide-log-in"></i> Se connecter
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

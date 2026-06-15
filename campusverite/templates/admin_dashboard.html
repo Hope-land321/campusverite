@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Modérateur — CampusVérité{% endblock %}
+
+{% block content %}
+  <div class="dashboard-shell">
+    <!-- Admin Header -->
+    <header class="page-heading reveal" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+      <div>
+        <p class="form-eyebrow"><i class="lucide-lock"></i> PANNEAU DE MODÉRATION</p>
+        <h1>Backoffice Modération</h1>
+        <p class="form-description">Gérez les signaux du campus, examinez les abus et appliquez la charte.</p>
+      </div>
+      <a href="{{ url_for('main.admin_logout') }}" class="cancel-link" style="padding: 10px 16px; border: 1px solid var(--color-rose); color: var(--color-rose); border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.05);">
+        <i class="lucide-log-out"></i> Déconnexion
+      </a>
+    </header>
+
+    <!-- Admin stats summary -->
+    <section class="stats-strip reveal" style="margin-bottom: 28px;">
+      <article class="stat-card stat-teal">
+        <div class="stat-icon-wrapper"><i class="lucide-message-square"></i></div>
+        <div class="stat-info">
+          <span class="counter-val">{{ posts|length }}</span>
+          <small>Total Signaux</small>
+        </div>
+      </article>
+
+      {% set rants_count = posts|selectattr('type', 'equalto', 'rant')|list|length %}
+      {% set suggestions_count = posts|selectattr('type', 'equalto', 'suggestion')|list|length %}
+      {% set hidden_count = posts|selectattr('status', 'equalto', 'hidden')|list|length %}
+
+      <article class="stat-card stat-rose">
+        <div class="stat-icon-wrapper"><i class="lucide-flame"></i></div>
+        <div class="stat-info">
+          <span class="counter-val">{{ rants_count }}</span>
+          <small>Total Rants</small>
+        </div>
+      </article>
+
+      <article class="stat-card stat-blue">
+        <div class="stat-icon-wrapper"><i class="lucide-lightbulb"></i></div>
+        <div class="stat-info">
+          <span class="counter-val">{{ suggestions_count }}</span>
+          <small>Total Suggestions</small>
+        </div>
+      </article>
+
+      <article class="stat-card stat-amber">
+        <div class="stat-icon-wrapper"><i class="lucide-eye-off"></i></div>
+        <div class="stat-info">
+          <span class="counter-val">{{ hidden_count }}</span>
+          <small>Signaux Masqués</small>
+        </div>
+      </article>
+    </section>
+
+    <!-- Signals Moderator Table -->
+    <section class="glass-panel reveal" style="padding: 24px; overflow: hidden;">
+      <div class="panel-heading" style="margin-bottom: 20px;">
+        <h2 class="panel-title"><i class="lucide-shield-alert"></i> Signaux à Modérer</h2>
+        <span class="panel-subtitle">Liste de tous les messages</span>
+      </div>
+
+      <div class="admin-table-container" style="overflow-x: auto; width: 100%;">
+        <table class="admin-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border-glass); color: var(--text-secondary); font-size: 0.85rem; font-weight: 700;">
+              <th style="padding: 12px 16px; width: 60px;">ID</th>
+              <th style="padding: 12px 16px; width: 150px;">Catégorie</th>
+              <th style="padding: 12px 16px; width: 120px;">Type</th>
+              <th style="padding: 12px 16px;">Message</th>
+              <th style="padding: 12px 16px; width: 80px; text-align: center;"><i class="lucide-thumbs-up"></i></th>
+              <th style="padding: 12px 16px; width: 80px; text-align: center;"><i class="lucide-alert-triangle"></i></th>
+              <th style="padding: 12px 16px; width: 110px;">Statut</th>
+              <th style="padding: 12px 16px; width: 220px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for post in posts %}
+              <tr id="admin-row-{{ post.id }}" style="border-bottom: 1px solid var(--border-glass); font-size: 0.9rem; transition: background-color 0.2s;" class="admin-row-item">
+                <td style="padding: 16px; font-weight: 700; color: var(--text-muted);">#{{ post.id }}</td>
+                <td style="padding: 16px;">
+                  <span class="badge-tag badge-category" style="padding: 2px 8px; font-size: 0.7rem;">{{ post.category_name }}</span>
+                </td>
+                <td style="padding: 16px;">
+                  <span class="badge-tag {% if post.type == 'rant' %}badge-rant{% else %}badge-suggestion{% endif %}" style="padding: 2px 8px; font-size: 0.7rem;">
+                    {{ post.type|type_label }}
+                  </span>
+                </td>
+                <td style="padding: 16px; max-width: 380px;">
+                  <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ post.content }}">
+                    {{ post.content }}
+                  </div>
+                </td>
+                <td style="padding: 16px; text-align: center; font-weight: 700;">{{ post.useful_votes }}</td>
+                <td style="padding: 16px; text-align: center; font-weight: 700; {% if post.report_count >= 5 %}color: var(--color-rose);{% elif post.report_count >= 1 %}color: var(--color-amber);{% endif %}">
+                  {{ post.report_count }}
+                </td>
+                <td style="padding: 16px;">
+                  <span id="admin-status-badge-{{ post.id }}" class="badge-tag {% if post.status == 'hidden' %}badge-rant{% elif post.status == 'petition' %}badge-petition{% else %}badge-suggestion{% endif %}" style="padding: 2px 8px; font-size: 0.7rem;">
+                    {% if post.status == 'hidden' %}
+                      Masqué
+                    {% elif post.status == 'petition' %}
+                      Pétition
+                    {% else %}
+                      Publié
+                    {% endif %}
+                  </span>
+                </td>
+                <td style="padding: 16px; text-align: right;">
+                  <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                    <!-- Toggle Visibility -->
+                    <button 
+                      class="action-btn admin-toggle-btn" 
+                      data-id="{{ post.id }}"
+                      style="height: 32px; padding: 0 10px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary); border: 1px solid var(--border-glass);"
+                      title="Masquer ou restaurer l'affichage public"
+                    >
+                      {% if post.status == 'hidden' %}
+                        <i class="lucide-eye" style="font-size: 13px;"></i> <span>Restaurer</span>
+                      {% else %}
+                        <i class="lucide-eye-off" style="font-size: 13px;"></i> <span>Masquer</span>
+                      {% endif %}
+                    </button>
+                    
+                    <!-- Hard Delete -->
+                    <button 
+                      class="action-btn admin-delete-btn" 
+                      data-id="{{ post.id }}"
+                      style="height: 32px; padding: 0 10px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 63, 94, 0.05); border: 1px solid rgba(244, 63, 94, 0.2); color: var(--color-rose);"
+                      title="Supprimer définitivement"
+                    >
+                      <i class="lucide-trash" style="font-size: 13px;"></i> <span>Supprimer</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="8" style="padding: 32px; text-align: center; color: var(--text-muted);">
+                  <i class="lucide-info" style="font-size: 24px; margin-bottom: 8px; display: block; margin-left: auto; margin-right: auto;"></i>
+                  Aucun signal enregistré pour le moment.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- Admin Interactive JS Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Toggle Visibility Action
+      document.querySelectorAll(".admin-toggle-btn").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.id;
+          button.disabled = true;
+
+          try {
+            const response = await fetch(`/admin/posts/${id}/toggle-status`, {
+              method: "POST",
+              headers: { "X-Requested-With": "fetch" }
+            });
+            
+            if (!response.ok) throw new Error("Erreur serveur");
+            const data = await response.json();
+            
+            // Update UI elements
+            const badge = document.getElementById(`admin-status-badge-${id}`);
+            const btnSpan = button.querySelector("span");
+            const btnIcon = button.querySelector("i");
+            
+            if (data.status === "hidden") {
+              badge.textContent = "Masqué";
+              badge.className = "badge-tag badge-rant";
+              btnSpan.textContent = "Restaurer";
+              btnIcon.className = "lucide-eye";
+              showToast(`L'avis #${id} a été masqué du fil public.`, "info");
+            } else {
+              badge.textContent = "Publié";
+              badge.className = "badge-tag badge-suggestion";
+              btnSpan.textContent = "Masquer";
+              btnIcon.className = "lucide-eye-off";
+              showToast(`L'avis #${id} a été restauré avec succès.`, "success");
+            }
+          } catch (err) {
+            showToast("Impossible de modifier le statut.", "error");
+          } finally {
+            button.disabled = false;
+          }
+        });
+      });
+
+      // Permanent Delete Action
+      document.querySelectorAll(".admin-delete-btn").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const id = button.dataset.id;
+          if (!confirm(`Voulez-vous VRAIMENT supprimer définitivement le signal #${id} de la base de données ? Cette action est irréversible.`)) {
+            return;
+          }
+          
+          button.disabled = true;
+
+          try {
+            const response = await fetch(`/admin/posts/${id}/delete`, {
+              method: "POST",
+              headers: { "X-Requested-With": "fetch" }
+            });
+            
+            if (!response.ok) throw new Error("Erreur serveur");
+            
+            // Animate row removal
+            const row = document.getElementById(`admin-row-${id}`);
+            row.style.opacity = "0";
+            row.style.transform = "translateX(-20px)";
+            row.style.transition = "transform 0.4s ease, opacity 0.4s ease";
+            
+            setTimeout(() => {
+              row.remove();
+              showToast(`L'avis #${id} a été supprimé définitivement.`, "info");
+            }, 400);
+          } catch (err) {
+            showToast("Impossible de supprimer le signal.", "error");
+            button.disabled = false;
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}CampusVerite — Observatoire Étudiant Anonyme{% endblock %}</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Plateforme web de feedback étudiant anonyme. Exprimez vos avis, suggestions et coups de gueule sans compte utilisateur pour améliorer la vie du campus.">
+    <meta name="theme-color" content="#0b0f19">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.415.0/font/lucide.min.css">
+    
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+  </head>
+  <body>
+    <!-- Backdrops for ambient glow -->
+    <div class="ambient-glow glow-1" aria-hidden="true"></div>
+    <div class="ambient-glow glow-2" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('main.index') }}" aria-label="Retour au fil CampusVerite">
+        <div class="brand-logo">
+          <i class="lucide-shield-alert brand-icon"></i>
+        </div>
+        <div class="brand-text">
+          <strong>CampusVérité</strong>
+          <small>Radar live anonyme</small>
+        </div>
+      </a>
+      
+      <nav class="nav-actions" aria-label="Navigation principale">
+        <a class="nav-link" href="{{ url_for('main.index') }}">
+          <i class="lucide-layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a class="primary-link" href="{{ url_for('main.submit') }}">
+          <i class="lucide-plus-circle"></i>
+          <span>Publier un signal</span>
+        </a>
+        
+        <!-- Theme Toggle Button -->
+        <button id="theme-toggle" class="theme-toggle" aria-label="Changer de thème" type="button">
+          <i class="lucide-sun icon-sun"></i>
+          <i class="lucide-moon icon-moon"></i>
+        </button>
+      </nav>
+    </header>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <span class="anonymity-badge">
+          <i class="lucide-eye-off"></i>
+          Anonymous by design
+        </span>
+        <span class="footer-divider">|</span>
+        <span>Aucun compte, nom ou matricule stocké</span>
+        <span class="footer-divider">|</span>
+        <a href="{{ url_for('main.admin_dashboard') }}" style="color: var(--color-teal); display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+          <i class="lucide-lock" style="font-size: 13px;"></i> Admin
+        </a>
+        <span class="footer-divider">|</span>
+        <span>CampusVérité &copy; 2026</span>
+
+      </div>
+    </footer>
+
+    <!-- Core App JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Lancer un signal — CampusVérité{% endblock %}
+
+{% block content %}
+  <section class="form-shell">
+    <div class="page-heading reveal">
+      <div>
+        <p class="form-eyebrow"><i class="lucide-eye-off"></i> SÉCURISÉ & ANONYME</p>
+        <h1>Exprimez une voix utile pour le campus</h1>
+        <p class="form-description">Votre signal sera publié publiquement sans aucun identifiant. Respectez la charte pour que votre message reste constructif.</p>
+      </div>
+    </div>
+
+    <div class="form-layout">
+      <!-- Feedback Form -->
+      <form class="feedback-form glass-panel reveal" action="{{ url_for('main.store_post') }}" method="post" id="signal-form">
+        {% if errors %}
+          <div class="error-box" role="alert">
+            <div class="error-header">
+              <i class="lucide-alert-octagon"></i>
+              <strong>Erreur de validation</strong>
+            </div>
+            <ul>
+              {% for error in errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <div class="field-grid">
+          <div class="form-group">
+            <label for="category">Catégorie</label>
+            <div class="select-wrapper">
+              <i class="lucide-tag select-icon"></i>
+              <select id="category" name="category" required>
+                <option value="">Choisir un domaine...</option>
+                {% for category in categories %}
+                  <option value="{{ category.slug }}" {% if form_data.category == category.slug %}selected{% endif %}>
+                    {{ category.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Type de Signal</label>
+            <div class="select-wrapper">
+              <i class="lucide-layers select-icon"></i>
+              <select id="type" name="type" required>
+                <option value="">Choisir un type...</option>
+                {% for key, label in publication_types.items() %}
+                  <option value="{{ key }}" {% if form_data.type == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="textarea-header">
+            <label for="content">Votre message</label>
+            <span class="char-counter" id="char-counter">0 / 900</span>
+          </div>
+          <div class="textarea-wrapper">
+            <textarea
+              id="content"
+              name="content"
+              rows="8"
+              minlength="20"
+              maxlength="900"
+              required
+              placeholder="Décrivez précisément le problème ou la suggestion de manière respectueuse et concrète (minimum 20 caractères, pas de noms de personnes)."
+            >{{ form_data.content }}</textarea>
+          </div>
+        </div>
+
+        <!-- Charter Checkbox -->
+        <label class="charter-check glass-item">
+          <input type="checkbox" name="charter" id="charter-checkbox" required>
+          <span class="checkbox-label">
+            <i class="lucide-check-square checked-icon"></i>
+            J'accepte la charte : respect, pertinence et constructivité. Aucun nom de personne, diffamation ou insulte.
+          </span>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit" class="submit-btn" id="submit-signal-btn">
+            <i class="lucide-send"></i> Publier Anonymement
+          </button>
+          <a href="{{ url_for('main.index') }}" class="cancel-link">
+            <i class="lucide-x-circle"></i> Annuler
+          </a>
+        </div>
+      </form>
+
+      <!-- Sidebar Charter Info -->
+      <aside class="charter-panel glass-panel reveal">
+        <div class="panel-heading">
+          <h2 class="panel-title"><i class="lucide-bookmark"></i> Charte CampusVérité</h2>
+          <span class="panel-subtitle">À respecter</span>
+        </div>
+        <div class="charter-content">
+          <p class="charter-intro">Pour conserver un climat sain et constructif sur la plateforme, chaque signalement doit respecter les critères suivants :</p>
+          <ul class="charter-points">
+            <li>
+              <i class="lucide-x-circle color-rant"></i>
+              <div>
+                <strong>Anonymat des individus :</strong>
+                <span>Ne citez aucun nom d'étudiant, de professeur ou de membre du personnel administratif.</span>
+              </div>
+            </li>
+            <li>
+              <i class="lucide-heart-handshake color-suggestion"></i>
+              <div>
+                <strong>Respect & Non-violence :</strong>
+                <span>Aucune insulte, menace, propos haineux ou discriminatoire ne sera toléré.</span>
+              </div>
+            </li>
+            <li>
+              <i class="lucide-pin"></i>
+              <div>
+                <strong>Faits concrets :</strong>
+                <span>Privilégiez les descriptions factuelles de situations précises plutôt que des rumeurs.</span>
+              </div>
+            </li>
+            <li>
+              <i class="lucide-lightbulb color-blue"></i>
+              <div>
+                <strong>Proposez des solutions :</strong>
+                <span>Pour les suggestions, expliquez comment améliorer la situation pour tout le monde.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+{% endblock %}

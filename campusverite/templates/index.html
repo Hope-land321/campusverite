@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Cockpit Live — CampusVérité{% endblock %}
+
+{% block content %}
+  <!-- Chart.js CDN for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+
+  <div class="dashboard-shell">
+    {% set global_score = stats.total_votes * 2 + stats.total_posts + stats.rants %}
+
+    <!-- Notice alert for post creation -->
+    {% if created %}
+      <div class="notice-toast reveal" role="status">
+        <i class="lucide-check-circle"></i>
+        <span>Signal anonyme publié avec succès ! Il apparaît maintenant dans le flux.</span>
+        <button class="close-notice" onclick="this.parentElement.remove()" aria-label="Fermer">&times;</button>
+      </div>
+    {% endif %}
+
+    <!-- Dashboard Hero Section -->
+    <header class="dashboard-hero reveal">
+      <div class="hero-copy">
+        <span class="hero-badge"><i class="lucide-info"></i>Plateforme Sécurisée</span>
+        <h1>Le pouls en temps réel de la vie du campus.</h1>
+        <p class="hero-subtitle">Exprimez vos préoccupations, proposez des améliorations et soutenez les idées des autres. Le tout, de manière 100% anonyme, pour que seule la vérité compte.</p>
+        <div class="hero-actions">
+          <a class="primary-link-large" href="{{ url_for('main.submit') }}">
+            <i class="lucide-plus-circle"></i>
+            <span>Publier un signal</span>
+          </a>
+          <a class="secondary-link-large" href="#feed">
+            <i class="lucide-arrow-down"></i>
+            <span>Explorer le flux</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- High-Tech Animated Radar Console -->
+      <aside class="signal-console reveal" aria-label="Indice global CampusVérité">
+        <div class="console-header">
+          <span class="live-indicator">
+            <span class="live-dot"></span>
+            RADAR LIVE
+          </span>
+          <strong class="console-score" id="global-tension-score">Tension: {{ global_score }}</strong>
+        </div>
+        <div class="canvas-radar-container" aria-hidden="true">
+          <canvas id="radar-canvas" width="280" height="280"></canvas>
+          <div class="radar-scanline"></div>
+          <div class="radar-glow"></div>
+        </div>
+        <div class="console-summary">
+          <div class="summary-item">
+            <span class="summary-label"><i class="lucide-flame color-rant"></i> Rants</span>
+            <strong class="summary-val">{{ stats.rants }}</strong>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label"><i class="lucide-lightbulb color-suggestion"></i> Suggestions</span>
+            <strong class="summary-val">{{ stats.suggestions }}</strong>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label"><i class="lucide-award color-petition"></i> Pétitions</span>
+            <strong class="summary-val">{{ stats.petitions }}</strong>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <!-- Stats Count strip -->
+    <section class="stats-strip reveal" aria-label="Statistiques globales">
+      <article class="stat-card stat-teal">
+        <div class="stat-icon-wrapper">
+          <i class="lucide-message-square"></i>
+        </div>
+        <div class="stat-info">
+          <span data-counter="{{ stats.total_posts }}" class="counter-val">0</span>
+          <small>Avis Publiés</small>
+        </div>
+        <div class="card-glow"></div>
+      </article>
+      
+      <article class="stat-card stat-blue">
+        <div class="stat-icon-wrapper">
+          <i class="lucide-thumbs-up"></i>
+        </div>
+        <div class="stat-info">
+          <span data-counter="{{ stats.total_votes }}" class="counter-val">0</span>
+          <small>Votes Utiles</small>
+        </div>
+        <div class="card-glow"></div>
+      </article>
+
+      <article class="stat-card stat-amber">
+        <div class="stat-icon-wrapper">
+          <i class="lucide-file-text"></i>
+        </div>
+        <div class="stat-info">
+          <span data-counter="{{ stats.petitions }}" class="counter-val">0</span>
+          <small>Pétitions Actives</small>
+        </div>
+        <div class="card-glow"></div>
+      </article>
+
+      <article class="stat-card stat-rose">
+        <div class="stat-icon-wrapper">
+          <i class="lucide-activity"></i>
+        </div>
+        <div class="stat-info">
+          <span data-counter="{{ global_score }}" class="counter-val">0</span>
+          <small>Indice Tension Campus</small>
+        </div>
+        <div class="card-glow"></div>
+      </article>
+    </section>
+
+    <!-- Content Layout Grid -->
+    <section class="content-grid">
+      <!-- Left Column: Filters and Radar status -->
+      <aside class="side-panel reveal" aria-label="Filtres et tendances">
+        <form class="filters-panel glass-panel" method="get">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-filter"></i> Filtres du flux</h2>
+            <span class="panel-subtitle">Vue ciblée</span>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Catégorie</label>
+            <div class="select-wrapper">
+              <i class="lucide-tag select-icon"></i>
+              <select id="category" name="category">
+                <option value="">Toutes les catégories</option>
+                {% for category in categories %}
+                  <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
+                    {{ category.name }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="type">Type de Signal</label>
+            <div class="select-wrapper">
+              <i class="lucide-layers select-icon"></i>
+              <select id="type" name="type">
+                <option value="">Tous les types</option>
+                {% for key, label in publication_types.items() %}
+                  <option value="{{ key }}" {% if selected_type == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-buttons">
+            <button type="submit" class="apply-filter-btn">
+              <i class="lucide-sliders-horizontal"></i> Filtrer
+            </button>
+            <a href="{{ url_for('main.index') }}" class="reset-filter-link">
+              <i class="lucide-rotate-ccw"></i> Réinitialiser
+            </a>
+          </div>
+        </form>
+
+        <!-- Dynamic Tension index list -->
+        <section class="heat-panel glass-panel" aria-label="Radar Campus">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-gauge"></i> Radar de Tension</h2>
+            <span class="panel-subtitle">Par secteur</span>
+          </div>
+          <div class="heat-list">
+            {% for item in heatmap %}
+              {% set width = (item.score / max_heat * 100)|round(0, 'floor') %}
+              <!-- Store values as data attributes for chart generation -->
+              <article class="heat-item" data-category-slug="{{ item.slug }}" data-category-name="{{ item.name }}" data-category-score="{{ item.score }}">
+                <div class="heat-header">
+                  <div class="heat-info">
+                    <strong class="category-title">{{ item.name }}</strong>
+                    <small class="category-meta">{{ item.post_count }} avis · {{ item.total_votes }} votes · Score {{ item.score }}</small>
+                  </div>
+                  <span class="heat-badge heat-badge-{{ item.status_key }}">{{ item.status_label }}</span>
+                </div>
+                <div class="heat-bar" aria-hidden="true">
+                  <span class="bar-fill" style="--bar-width: {{ width }}%"></span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+
+        <!-- Chart.js card for Visual analytics -->
+        <section class="chart-panel glass-panel" aria-label="Graphique analytique">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-bar-chart-3"></i> Analyse Visuelle</h2>
+            <span class="panel-subtitle">Distribution</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="tension-distribution-chart"></canvas>
+          </div>
+        </section>
+      </aside>
+
+      <!-- Middle Column: Main Anonymously Published Feed -->
+      <section class="feed-panel reveal" id="feed" aria-label="Liste des avis anonymes">
+        <div class="feed-toolbar">
+          <div class="toolbar-title">
+            <p class="toolbar-eyebrow">FLUX ANONYME</p>
+            <h2>Signaux Récents</h2>
+          </div>
+          <a class="nav-btn-new" href="{{ url_for('main.submit') }}">
+            <i class="lucide-plus-circle"></i> Nouveau
+          </a>
+        </div>
+
+        <div class="feed-list">
+          {% for post in posts %}
+            <article class="post-card reveal" id="post-{{ post.id }}" data-post-id="{{ post.id }}">
+              <div class="post-glow-effect"></div>
+              <div class="post-surface">
+                <header class="post-meta">
+                  <span class="badge-tag badge-category">
+                    <i class="lucide-tag"></i> {{ post.category_name }}
+                  </span>
+                  
+                  <span class="badge-tag {% if post.type == 'rant' %}badge-rant{% else %}badge-suggestion{% endif %}">
+                    {% if post.type == 'rant' %}
+                      <i class="lucide-flame"></i>
+                    {% else %}
+                      <i class="lucide-lightbulb"></i>
+                    {% endif %}
+                    {{ post.type|type_label }}
+                  </span>
+
+                  {% if post.status == 'petition' %}
+                    <span class="badge-tag badge-petition animate-pulse">
+                      <i class="lucide-award"></i> Pétition Active
+                    </span>
+                  {% endif %}
+                  
+                  <time class="post-time" datetime="{{ post.created_at }}">
+                    <i class="lucide-clock"></i> {{ post.created_at|relative_time }}
+                  </time>
+                </header>
+
+                <p class="post-content">{{ post.content }}</p>
+
+                <footer class="post-actions">
+                  <button class="action-btn vote-btn" type="button" data-action="vote" data-id="{{ post.id }}" aria-label="Voter comme utile">
+                    <i class="lucide-thumbs-up"></i>
+                    <span data-vote-label>Utile</span>
+                    <strong data-vote-count class="vote-count">{{ post.useful_votes }}</strong>
+                  </button>
+                  
+                  <button class="action-btn report-btn" type="button" data-action="report" data-id="{{ post.id }}" aria-label="Signaler cet avis">
+                    <i class="lucide-alert-triangle"></i>
+                    <span>Signaler</span>
+                  </button>
+                  
+                  <div class="signal-priority-chip">
+                    {% if post.useful_votes >= 10 %}
+                      <span class="priority-indicator indicator-high"></span>
+                      <span>Priorité Forte</span>
+                    {% elif post.useful_votes >= 4 %}
+                      <span class="priority-indicator indicator-medium"></span>
+                      <span>En Hausse</span>
+                    {% else %}
+                      <span class="priority-indicator indicator-low"></span>
+                      <span>Signal Frais</span>
+                    {% endif %}
+                  </div>
+                </footer>
+              </div>
+            </article>
+          {% else %}
+            <section class="empty-state reveal">
+              <div class="empty-icon-wrapper">
+                <i class="lucide-message-square-dashed"></i>
+              </div>
+              <h3>Aucun signal trouvé</h3>
+              <p>Modifiez vos filtres ou soyez le premier à lancer un signal anonyme pour faire bouger le campus.</p>
+              <a class="primary-link-large" href="{{ url_for('main.submit') }}">
+                <i class="lucide-plus-circle"></i> Publier un signal
+              </a>
+            </section>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Right Column: Top Useful & Live Insights -->
+      <aside class="insight-panel reveal" aria-label="Avis les plus utiles">
+        <section class="top-rated-panel glass-panel">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-star"></i> Top Signaux</h2>
+            <span class="panel-subtitle">{{ top_posts|length }} signaux</span>
+          </div>
+          <div class="top-list">
+            {% for post in top_posts %}
+              <a href="#post-{{ post.id }}" class="top-list-item">
+                <div class="top-score-badge">
+                  <i class="lucide-thumbs-up"></i>
+                  <span>{{ post.useful_votes }}</span>
+                </div>
+                <div class="top-preview">
+                  <p class="top-content">{{ post.content[:78] }}{% if post.content|length > 78 %}...{% endif %}</p>
+                  <span class="top-category"><i class="lucide-tag"></i> {{ post.category_name }}</span>
+                </div>
+              </a>
+            {% else %}
+              <p class="empty-small-text"><i class="lucide-info"></i> Aucun vote pour l'instant.</p>
+            {% endfor %}
+          </div>
+        </section>
+
+        <!-- Information cockpit for jury demo -->
+        <section class="glass-panel demo-brief-panel">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-milestone"></i> Démo Jury</h2>
+            <span class="panel-badge-demo">Cockpit</span>
+          </div>
+          <div class="demo-steps">
+            <p class="demo-intro">Testez les fonctionnalités clés de la plateforme en temps réel :</p>
+            <ul class="demo-list">
+              <li>
+                <div class="demo-step-num">1</div>
+                <div class="demo-step-desc"><strong>Votez "Utile" :</strong> Un jet de confettis se déclenchera.</div>
+              </li>
+              <li>
+                <div class="demo-step-num">2</div>
+                <div class="demo-step-desc"><strong>Seuil Pétition :</strong> À 10 votes utiles, l'avis passe en <em>Pétition Active</em> avec une animation vibrante.</div>
+              </li>
+              <li>
+                <div class="demo-step-num">3</div>
+                <div class="demo-step-desc"><strong>Signalement :</strong> Un avis ayant reçu 5 signalements disparaît instantanément du fil public.</div>
+              </li>
+            </ul>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </div>
+{% endblock %}

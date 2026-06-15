@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: campusverite_app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - campusverite_data:/app/data
+    environment:
+      - PORT=5000
+      - WEB_CONCURRENCY=2
+      - WEB_THREADS=4
+      - LOG_LEVEL=info
+      # En production, changez cette clé dans un vrai fichier .env
+      - SECRET_KEY=cle-secrete-production-de-demo-campusverite
+      - CAMPUSVERITE_DB_PATH=/app/data/campusverite.db
+      - PETITION_THRESHOLD=10
+      - REPORT_HIDE_THRESHOLD=5
+
+volumes:
+  campusverite_data:
