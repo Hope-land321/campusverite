@@ -6,10 +6,18 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_DB_PATH = BASE_DIR / "data" / "campusverite.db"
+
+# Détecter si l'application tourne sur Vercel (environnement serverless en lecture seule)
+IS_VERCEL = os.environ.get("VERCEL") == "1"
+
+if IS_VERCEL:
+    DEFAULT_DB_PATH = Path("/tmp") / "campusverite.db"
+else:
+    DEFAULT_DB_PATH = BASE_DIR / "data" / "campusverite.db"
 
 # Charger le fichier .env s'il existe
 load_dotenv(BASE_DIR / ".env")
+
 
 
 class BaseConfig:
