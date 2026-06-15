@@ -288,3 +288,52 @@ def delete_post_permanently(post_id: int) -> bool:
     db.commit()
     return cursor.rowcount > 0
 
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+def fetch_chat_messages(limit: int = 60) -> list[sqlite3.Row]:
+    return get_db().execute(
+        "SELECT * FROM chat_messages ORDER BY datetime(created_at) DESC LIMIT ?",
+        (limit,),
+    ).fetchall()
+
+
+def send_chat_message(username: str, content: str) -> dict:
+    username = (username or "").strip()[:30] or "Anonyme"
+    content = (content or "").strip()[:400]
+    if len(content) < 1:
+        return {"error": "Message vide."}
+    created_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    db = get_db()
+    cursor = db.execute(
+        "INSERT INTO chat_messages (username, content, created_at) VALUES (?, ?, ?)",
+        (username, content, created_at),
+    )
+    db.commit()
+    return {"id": cursor.lastrowid, "username": username, "content": content, "created_at": created_at}
+
+
+# ── Moods ─────────────────────────────────────────────────────────────────────
+
+def fetch_moods() -> list[sqlite3.Row]:
+    return get_db().execute(
+        "SELECT * FROM campus_moods ORDER BY count DESC"
+    ).fetchall()
+
+
+def vote_mood(mood_key: str) -> dict | None:
+    db = get_db()
+    row = db.execute("SELECT * FROM campus_moods WHERE mood_key = ?", (mood_key,)).fetchone()
+    if row is None:
+        return None
+    db.execute("UPDATE campus_moods SET count = count + 1 WHERE mood_key = ?", (mood_key,))
+    db.commit()
+    total = db.execute("SELECT SUM(count) FROM campus_moods").fetchone()[0] or 1
+    all_moods = fetch_moods()
+    return {
+        "moods": [
+            {"key": m["mood_key"], "label": m["mood_label"], "count": m["count"],
+             "pct": round(m["count"] / total * 100)}
+            for m in all_moods
+        ]
+    }

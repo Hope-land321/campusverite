@@ -17,6 +17,10 @@ from .services import (
     fetch_all_posts_admin,
     toggle_post_visibility,
     delete_post_permanently,
+    fetch_chat_messages,
+    send_chat_message,
+    fetch_moods,
+    vote_mood,
 )
 
 
@@ -33,6 +37,8 @@ def index():
     posts = fetch_posts(category, publication_type)
     heatmap = build_campus_radar(fetch_heatmap())
     max_heat = max((int(row["score"]) for row in heatmap), default=1)
+    moods = fetch_moods()
+    total_mood_votes = sum(m["count"] for m in moods) or 1
 
     return render_template(
         "index.html",
@@ -46,6 +52,8 @@ def index():
         selected_type=publication_type or "",
         publication_types=PUBLICATION_TYPES,
         created=request.args.get("created") == "1",
+        moods=moods,
+        total_mood_votes=total_mood_votes,
     )
 
 
@@ -158,4 +166,62 @@ def admin_delete_post(post_id: int):
     if not success:
         return jsonify({"error": "Avis introuvable."}), 404
     return jsonify({"success": True})
+
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+@main_bp.get("/api/chat")
+def api_chat_get():
+    since_id = request.args.get("since", 0, type=int)
+    msgs = fetch_chat_messages(limit=60)
+    result = [
+        {"id": m["id"], "username": m["username"],
+         "content": m["content"], "created_at": m["created_at"]}
+        for m in msgs if m["id"] > since_id
+    ]
+    return jsonify(result[::-1])  # chronological order
+
+
+@main_bp.post("/api/chat")
+def api_chat_post():
+    data = request.get_json(force=True, silent=True) or {}
+    result = send_chat_message(data.get("username", ""), data.get("content", ""))
+    if "error" in result:
+        return jsonify(result), 400
+    return jsonify(result), 201
+
+
+# ── Moods ─────────────────────────────────────────────────────────────────────
+
+@main_bp.get("/api/moods")
+def api_moods_get():
+    moods = fetch_moods()
+    total = sum(m["count"] for m in moods) or 1
+    return jsonify([
+        {"key": m["mood_key"], "label": m["mood_label"], "count": m["count"],
+         "pct": round(m["count"] / total * 100)}
+        for m in moods
+    ])
+
+
+@main_bp.post("/api/moods/<mood_key>/vote")
+def api_mood_vote(mood_key: str):
+    result = vote_mood(mood_key)
+    if result is None:
+        return jsonify({"error": "Humeur invalide."}), 404
+    return jsonify(result)
+
+
+# ── Petition template ─────────────────────────────────────────────────────────
+
+@main_bp.post("/api/petition/generate")
+def api_petition_generate():
+    data = request.get_json(force=True, silent=True) or {}
+    title   = (data.get("title", "") or "").strip()[:120]
+    issue   = (data.get("issue", "") or "").strip()[:800]
+    target  = (data.get("target", "Administration") or "Administration").strip()[:80]
+    demand  = (data.get("demand", "") or "").strip()[:400]
+    if not title or not issue:
+        return jsonify({"error": "Titre et problème requis."}), 400
+    return jsonify({"title": title, "issue": issue, "target": target, "demand": demand})
 

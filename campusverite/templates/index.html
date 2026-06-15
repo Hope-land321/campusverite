@@ -335,7 +335,121 @@
             </ul>
           </div>
         </section>
+
+        <!-- 🌡️ Thermomètre Émotionnel du Campus -->
+        <section class="glass-panel mood-panel" aria-label="Humeur du campus">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-heart-pulse"></i> Humeur du Campus</h2>
+            <span class="panel-subtitle live-pulse">{{ total_mood_votes }} votes</span>
+          </div>
+          <p class="mood-intro">Comment tu te sens aujourd'hui ?</p>
+          <div class="mood-list" id="mood-list">
+            {% for mood in moods %}
+              {% set pct = (mood.count / total_mood_votes * 100)|round(0,'floor')|int %}
+              <button class="mood-btn" data-mood="{{ mood.mood_key }}" aria-label="Voter {{ mood.mood_label }}">
+                <span class="mood-label">{{ mood.mood_label }}</span>
+                <span class="mood-bar-wrap">
+                  <span class="mood-bar-fill" style="width: {{ pct }}%"></span>
+                </span>
+                <span class="mood-pct">{{ pct }}%</span>
+              </button>
+            {% endfor %}
+          </div>
+          <p class="mood-footer"><i class="lucide-shield"></i> Vote anonyme, une seule fois par session</p>
+        </section>
+
+        <!-- 📄 Générateur de Pétition -->
+        <section class="glass-panel petition-gen-panel" aria-label="Générateur de pétition">
+          <div class="panel-heading">
+            <h2 class="panel-title"><i class="lucide-file-signature"></i> Générateur de Pétition</h2>
+            <span class="panel-badge-demo">Nouveau</span>
+          </div>
+          <p class="mood-intro">Transforme un signal fort en pétition officielle imprimable.</p>
+          <form id="petition-form" class="petition-form">
+            <div class="form-group">
+              <label for="pet-title">Titre de la pétition</label>
+              <input type="text" id="pet-title" class="pet-input" placeholder="Ex: Amélioration de la cafétéria" maxlength="120" required>
+            </div>
+            <div class="form-group">
+              <label for="pet-issue">Problème constaté</label>
+              <textarea id="pet-issue" class="pet-input" rows="3" placeholder="Décris le problème en détail..." maxlength="800" required></textarea>
+            </div>
+            <div class="form-group">
+              <label for="pet-target">Destinataire</label>
+              <input type="text" id="pet-target" class="pet-input" placeholder="Ex: Direction de l'université" maxlength="80">
+            </div>
+            <div class="form-group">
+              <label for="pet-demand">Demande / Solution proposée</label>
+              <input type="text" id="pet-demand" class="pet-input" placeholder="Ce que vous demandez concrètement..." maxlength="400">
+            </div>
+            <button type="submit" class="petition-gen-btn">
+              <i class="lucide-file-down"></i> Générer &amp; Imprimer
+            </button>
+          </form>
+        </section>
       </aside>
     </section>
+
+  <!-- 💬 Chat Flottant -->
+  <div id="chat-widget" class="chat-widget" aria-label="Chat Campus">
+    <button id="chat-toggle" class="chat-toggle-btn" aria-label="Ouvrir le chat">
+      <i class="lucide-message-circle"></i>
+      <span class="chat-badge" id="chat-badge" style="display:none"></span>
+    </button>
+    <div class="chat-box" id="chat-box" hidden>
+      <div class="chat-header">
+        <span><i class="lucide-message-circle"></i> Chat Campus <span class="live-dot" style="display:inline-block"></span></span>
+        <button class="chat-close-btn" id="chat-close" aria-label="Fermer">&times;</button>
+      </div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <form class="chat-input-row" id="chat-form">
+        <input type="text" id="chat-username" class="chat-name-input" placeholder="Pseudo (optionnel)" maxlength="30">
+        <div class="chat-msg-row">
+          <input type="text" id="chat-content" class="chat-msg-input" placeholder="Ton message..." maxlength="400" required autocomplete="off">
+          <button type="submit" class="chat-send-btn" aria-label="Envoyer"><i class="lucide-send"></i></button>
+        </div>
+      </form>
+    </div>
   </div>
+
+  <!-- 📄 Modal Pétition Imprimable -->
+  <div id="petition-modal" class="petition-modal" hidden>
+    <div class="petition-modal-inner">
+      <div id="petition-print-area" class="petition-print-area">
+        <div class="petition-header-block">
+          <h1 id="pm-title" class="pm-title"></h1>
+          <p class="pm-date">Pétition générée le <strong id="pm-date"></strong> — CampusVérité</p>
+        </div>
+        <div class="pm-section">
+          <h2>Destinataire</h2>
+          <p id="pm-target"></p>
+        </div>
+        <div class="pm-section">
+          <h2>Problème constaté</h2>
+          <p id="pm-issue"></p>
+        </div>
+        <div class="pm-section">
+          <h2>Demande des étudiants</h2>
+          <p id="pm-demand"></p>
+        </div>
+        <div class="pm-section pm-signers">
+          <h2>Signatures</h2>
+          <div class="signer-lines">
+            {% for i in range(12) %}
+              <div class="signer-line"><span class="signer-num">{{ loop.index }}.</span><span class="signer-rule"></span></div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="pm-footer">
+          <i>Pétition anonyme émise via CampusVérité — plateforme de feedback étudiant</i>
+        </div>
+      </div>
+      <div class="petition-modal-actions">
+        <button onclick="window.print()" class="pm-btn pm-btn-print"><i class="lucide-printer"></i> Imprimer</button>
+        <button id="pm-close" class="pm-btn pm-btn-close"><i class="lucide-x"></i> Fermer</button>
+      </div>
+    </div>
+  </div>  </div>
+
+
 {% endblock %}

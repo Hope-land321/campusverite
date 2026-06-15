@@ -47,6 +47,19 @@ def init_db() -> None:
             created_at TEXT NOT NULL,
             FOREIGN KEY(category_id) REFERENCES categories(id)
         );
+
+        CREATE TABLE IF NOT EXISTS chat_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS campus_moods (
+            mood_key TEXT PRIMARY KEY,
+            mood_label TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0
+        );
         """
     )
     db.executemany(
@@ -58,6 +71,43 @@ def init_db() -> None:
         CATEGORIES,
     )
     db.commit()
+
+    # Seed moods if empty
+    if db.execute("SELECT COUNT(*) FROM campus_moods").fetchone()[0] == 0:
+        db.executemany(
+            """
+            INSERT INTO campus_moods (mood_key, mood_label, count)
+            VALUES (?, ?, ?)
+            """,
+            [
+                ("happy", "😊 Zen", 24),
+                ("stressed", "😰 Stressé", 45),
+                ("tired", "😴 Fatigué", 56),
+                ("angry", "😡 En Colère", 18),
+                ("motivated", "🔥 Déterminé", 32)
+            ]
+        )
+        db.commit()
+
+    # Seed chat messages if empty
+    if db.execute("SELECT COUNT(*) FROM chat_messages").fetchone()[0] == 0:
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        db.executemany(
+            """
+            INSERT INTO chat_messages (username, content, created_at)
+            VALUES (?, ?, ?)
+            """,
+            [
+                ("Étudiant #31", "Salut tout le monde ! Quelqu'un sait si le gymnase est ouvert ce soir ?", (now - timedelta(minutes=45)).isoformat()),
+                ("Anonyme #12", "Oui, c'est ouvert jusqu'à 22h le lundi !", (now - timedelta(minutes=42)).isoformat()),
+                ("Étudiant #45", "Le sujet d'exam de maths de cet après-midi était d'une violence... 💀", (now - timedelta(minutes=15)).isoformat()),
+                ("CaféineLover", "Totalement d'accord, j'ai rendu copie blanche sur la dernière partie", (now - timedelta(minutes=10)).isoformat()),
+                ("Anonyme #99", "Courage les gars, ce sont bientôt les vacances ! 🏖️", (now - timedelta(minutes=5)).isoformat())
+            ]
+        )
+        db.commit()
+
 
     # Seed initial posts if DB is empty
     if db.execute("SELECT COUNT(*) FROM posts").fetchone()[0] == 0:

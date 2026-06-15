@@ -733,3 +733,193 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+/* ==========================================================================
+   CHAT WIDGET
+   ========================================================================== */
+function initChat() {
+  const toggleBtn  = document.getElementById("chat-toggle");
+  const closeBtn   = document.getElementById("chat-close");
+  const chatBox    = document.getElementById("chat-box");
+  const chatForm   = document.getElementById("chat-form");
+  const msgsList   = document.getElementById("chat-messages");
+  const badge      = document.getElementById("chat-badge");
+  if (!toggleBtn) return;
+
+  let isOpen      = false;
+  let lastId      = 0;
+  let unread      = 0;
+  let pollTimer   = null;
+
+  function formatTime(iso) {
+    try {
+      return new Date(iso + "Z").toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    } catch { return ""; }
+  }
+
+  function renderMsg(msg) {
+    const el = document.createElement("div");
+    el.className = "chat-msg";
+    el.dataset.id = msg.id;
+    el.innerHTML = `
+      <div class="chat-msg-user">${msg.username}</div>
+      <div class="chat-msg-text">${msg.content.replace(/</g,"&lt;")}</div>
+      <div class="chat-msg-time">${formatTime(msg.created_at)}</div>`;
+    return el;
+  }
+
+  async function pollMessages() {
+    try {
+      const res  = await fetch(`/api/chat?since=${lastId}`);
+      if (!res.ok) return;
+      const msgs = await res.json();
+      if (msgs.length) {
+        msgs.forEach(msg => {
+          if (msg.id > lastId) {
+            lastId = msg.id;
+            msgsList.appendChild(renderMsg(msg));
+          }
+        });
+        msgsList.scrollTop = msgsList.scrollHeight;
+        if (!isOpen) {
+          unread += msgs.length;
+          badge.textContent = unread > 9 ? "9+" : unread;
+          badge.style.display = "flex";
+        }
+      }
+    } catch (_) {}
+  }
+
+  function openChat() {
+    isOpen = true;
+    chatBox.hidden = false;
+    badge.style.display = "none";
+    unread = 0;
+    msgsList.scrollTop = msgsList.scrollHeight;
+  }
+  function closeChat() {
+    isOpen = false;
+    chatBox.hidden = true;
+  }
+
+  toggleBtn.addEventListener("click", () => isOpen ? closeChat() : openChat());
+  closeBtn.addEventListener("click", closeChat);
+
+  chatForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("chat-username").value.trim() || "Anonyme";
+    const content  = document.getElementById("chat-content").value.trim();
+    if (!content) return;
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, content }),
+      });
+      if (res.ok) {
+        document.getElementById("chat-content").value = "";
+        await pollMessages();
+      }
+    } catch (_) {}
+  });
+
+  // Initial load + poll every 4 seconds
+  pollMessages();
+  pollTimer = setInterval(pollMessages, 4000);
+}
+
+/* ==========================================================================
+   MOOD THERMOMETER
+   ========================================================================== */
+function initMoods() {
+  const list = document.getElementById("mood-list");
+  if (!list) return;
+
+  const voted = sessionStorage.getItem("cv:mood_voted");
+
+  function renderMoods(moods) {
+    list.querySelectorAll(".mood-btn").forEach(btn => {
+      const mood = moods.find(m => m.key === btn.dataset.mood);
+      if (!mood) return;
+      btn.querySelector(".mood-bar-fill").style.width = mood.pct + "%";
+      btn.querySelector(".mood-pct").textContent = mood.pct + "%";
+    });
+  }
+
+  if (voted) {
+    list.querySelectorAll(".mood-btn").forEach(b => {
+      b.classList.add("voted");
+      b.disabled = true;
+    });
+  }
+
+  list.querySelectorAll(".mood-btn").forEach(btn => {
+    if (voted) return;
+    btn.addEventListener("click", async () => {
+      if (btn.disabled) return;
+      list.querySelectorAll(".mood-btn").forEach(b => { b.disabled = true; b.classList.add("voted"); });
+      try {
+        const res = await fetch(`/api/moods/${btn.dataset.mood}/vote`, { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          renderMoods(data.moods);
+          sessionStorage.setItem("cv:mood_voted", "1");
+          showToast("Merci pour ton vote ! 🫀", "success");
+          triggerConfettiBurst();
+        }
+      } catch (_) {}
+    });
+  });
+}
+
+/* ==========================================================================
+   PETITION GENERATOR
+   ========================================================================== */
+function initPetitionGenerator() {
+  const form  = document.getElementById("petition-form");
+  const modal = document.getElementById("petition-modal");
+  const close = document.getElementById("pm-close");
+  if (!form || !modal) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      title:  document.getElementById("pet-title").value.trim(),
+      issue:  document.getElementById("pet-issue").value.trim(),
+      target: document.getElementById("pet-target").value.trim() || "Administration de l'université",
+      demand: document.getElementById("pet-demand").value.trim(),
+    };
+    try {
+      const res  = await fetch("/api/petition/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) { showToast("Erreur de génération.", "error"); return; }
+      const data = await res.json();
+
+      document.getElementById("pm-title").textContent  = data.title;
+      document.getElementById("pm-target").textContent = data.target;
+      document.getElementById("pm-issue").textContent  = data.issue;
+      document.getElementById("pm-demand").textContent = data.demand || "Non précisé.";
+      document.getElementById("pm-date").textContent   = new Date().toLocaleDateString("fr-FR", { year:"numeric", month:"long", day:"numeric" });
+
+      modal.hidden = false;
+      triggerConfettiBurst();
+    } catch (_) {
+      showToast("Erreur réseau.", "error");
+    }
+  });
+
+  close.addEventListener("click", () => { modal.hidden = true; });
+  modal.addEventListener("click", (e) => { if (e.target === modal) modal.hidden = true; });
+}
+
+/* ==========================================================================
+   BOOT — init all new modules
+   ========================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  initChat();
+  initMoods();
+  initPetitionGenerator();
+});
